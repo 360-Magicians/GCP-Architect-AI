@@ -1,0 +1,92 @@
+Here’s a solid, production-ready `cloudbuild.yaml` for Architect AI that:
+
+- Builds a Docker image  
+- Pushes it to Artifact Registry  
+- Deploys to Cloud Run in `us-south1`  
+- Is reusable across branches/environments  
+
+I’ll assume:
+
+- Repo has a Dockerfile at the root  
+- You have (or will create) a Docker Artifact Registry repo, e.g. `architect-ai-repo`  
+- Service name in Cloud Run: `architect-ai-backend`  
+
+You can drop this into the root of your `architect-ai` repo:
+
+```yaml
+# cloudbuild.yaml for Architect AI control-plane backend
+
+substitutions:
+  # Adjust these for your setup
+  _REGION: 'us-south1'
+  _REPO: 'architect-ai-repo'          # Artifact Registry repo name
+  _SERVICE_NAME: 'architect-ai-backend'
+
+options:
+  logging: CLOUD_LOGGING_ONLY
+
+steps:
+  # 1. Build Docker image
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'Build image'
+    args:
+      - 'build'
+      - '-t'
+      - '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/${_SERVICE_NAME}:$COMMIT_SHA'
+      - '.'
+
+  # 2. Push Docker image to Artifact Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'Push image'
+    args:
+      - 'push'
+      - '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/${_SERVICE_NAME}:$COMMIT_SHA'
+
+  # 3. Deploy to Cloud Run
+  - name: 'gcr.io/cloud-builders/gcloud'
+    id: 'Deploy to Cloud Run'
+    args:
+      - 'run'
+      - 'deploy'
+      - '${_SERVICE_NAME}'
+      - '--image=${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/${_SERVICE_NAME}:$COMMIT_SHA'
+      - '--region=${_REGION}'
+      - '--platform=managed'
+      - '--allow-unauthenticated'
+      # If you have a specific service account for Architect AI, uncomment and set it:
+      # - '--service-account=architect-ai-sa@$PROJECT_ID.iam.gserviceaccount.com'
+      # Optionally set min/max instances or CPU/memory:
+      # - '--memory=512Mi'
+      # - '--cpu=1'
+
+images:
+  - '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/${_SERVICE_NAME}:$COMMIT_SHA'
+```
+
+---
+
+### What you do next
+
+1. Create the Artifact Registry repo (once):
+
+```bash
+gcloud artifacts repositories create architect-ai-repo \
+  --repository-format=docker \
+  --location=us-south1 \
+  --description="Artifact Registry for Architect AI"
+```
+
+2. Put this `cloudbuild.yaml` in the Architect AI GitHub repo.  
+3. Create the Cloud Build trigger (in Architect AI project):
+
+```bash
+gcloud builds triggers create github \
+  --name="architect-ai-deploy" \
+  --repo-name="architect-ai" \
+  --repo-owner="360-Magicians" \
+  --branch-pattern="main" \
+  --build-config="cloudbuild.yaml" \
+  --region="us-south1"
+```
+
+If your stack is something specific (Node, Python, Go, etc.) and you want build steps for tests or linting added before deploy, tell me your backend language and I’ll extend this with the right steps.

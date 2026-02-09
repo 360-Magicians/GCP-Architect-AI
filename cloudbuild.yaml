@@ -1,18 +1,3 @@
-Here’s a solid, production-ready `cloudbuild.yaml` for Architect AI that:
-
-- Builds a Docker image  
-- Pushes it to Artifact Registry  
-- Deploys to Cloud Run in `us-south1`  
-- Is reusable across branches/environments  
-
-I’ll assume:
-
-- Repo has a Dockerfile at the root  
-- You have (or will create) a Docker Artifact Registry repo, e.g. `architect-ai-repo`  
-- Service name in Cloud Run: `architect-ai-backend`  
-
-You can drop this into the root of your `architect-ai` repo:
-
 ```yaml
 # cloudbuild.yaml for Architect AI control-plane backend
 

@@ -1,0 +1,33 @@
+graph TB
+    subgraph "Client Layer"
+        A["Frontend"]
+        B["React Components"]
+        C["HTML, CSS, JS"]
+    end
+
+    subgraph "API Layer"
+        D["API Routes"]
+        E["Server Actions"]
+        F["Edge Functions"]
+    end
+
+    subgraph "Authentication"
+        G["DeafAuth"]
+        H["JWT Tokens"]
+    end
+
+    subgraph "Database Layer"
+        I["PostgreSQL"]
+        J["Redis Cache"]
+    end
+
+    subgraph "AI Services"
+        K["OpenAI Integration"]
+        L["AI SDK"]
+    end
+
+    subgraph "Infrastructure"
+        M["Edge Network"]
+        N["Content Delivery"]
+        O["Analytics"]
+    end
